@@ -502,6 +502,11 @@ static inline void write_be64(uint64_t x, void *to)
 static void gost_crypt_mesh(struct ossl_gost_cipher_ctx *c, unsigned char *iv,
                             unsigned char *buf)
 {
+    if ((c->flags & GOST_CIPHER_PLAIN) != 0) {
+        gostcrypt(&(c->cctx), iv, buf);
+        return;
+    }
+
     assert(c->count % 8 == 0 && c->count <= 1024);
     if (c->key_meshing && c->count == 1024) {
         cryptopro_key_meshing(&(c->cctx), iv);
@@ -515,6 +520,13 @@ static void gost_cnt_next(void *ctx, unsigned char *iv, unsigned char *buf)
     struct ossl_gost_cipher_ctx *c = ctx;
     word32 g, go;
     unsigned char buf1[8];
+
+    if ((c->flags & GOST_CIPHER_PLAIN) != 0) {  /* do plain OFB, no magic */
+        gostcrypt(&(c->cctx), iv, buf);
+        memcpy(iv, buf, 8);
+        return;
+    }
+
     assert(c->count % 8 == 0 && c->count <= 1024);
     if (c->key_meshing && c->count == 1024) {
         cryptopro_key_meshing(&(c->cctx), iv);
@@ -813,6 +825,19 @@ int gost_cipher_ctl(EVP_CIPHER_CTX *ctx, int type, int arg, void *ptr)
         } else {
             return 0;
         }
+    case EVP_CTRL_AEAD_SET_TAG:
+        if (ptr != NULL && strcmp(ptr, "plain") == 0) {
+            struct ossl_gost_cipher_ctx *c =
+                EVP_CIPHER_CTX_get_cipher_data(ctx);
+
+            if (arg)
+                c->flags |=  GOST_CIPHER_PLAIN;
+            else
+                c->flags &= ~GOST_CIPHER_PLAIN;
+
+            return 1;
+        }
+        return 0;
 
     case EVP_CTRL_SET_SBOX:
         if (ptr) {

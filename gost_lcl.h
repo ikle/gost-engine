@@ -183,7 +183,15 @@ struct ossl_gost_cipher_ctx {
     unsigned int count;
     int key_meshing;
     gost_ctx cctx;
+    int flags;
 };
+
+#define GOST_CIPHER_PLAIN	0x01
+
+#ifndef EVP_CTRL_AEAD_SET_TAG
+#define EVP_CTRL_AEAD_SET_TAG	0x11
+#endif
+
 /* Structure to map parameter NID to S-block */
 struct gost_cipher_info {
     int nid;

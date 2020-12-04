@@ -22,8 +22,6 @@
 
 static int gost_cipher_init(EVP_CIPHER_CTX *ctx, const unsigned char *key,
                             const unsigned char *iv, int enc);
-static int gost_cipher_init_cbc(EVP_CIPHER_CTX *ctx, const unsigned char *key,
-                                const unsigned char *iv, int enc);
 static int gost_cipher_init_cpa(EVP_CIPHER_CTX *ctx, const unsigned char *key,
                                 const unsigned char *iv, int enc);
 static int gost_cipher_init_cp_12(EVP_CIPHER_CTX *ctx,
@@ -97,7 +95,7 @@ const EVP_CIPHER *cipher_gost_cbc(void)
                                           EVP_CIPH_RAND_KEY |
                                           EVP_CIPH_ALWAYS_CALL_INIT)
             || !EVP_CIPHER_meth_set_init(_hidden_Gost28147_89_cbc,
-                                         gost_cipher_init_cbc)
+                                         gost_cipher_init)
             || !EVP_CIPHER_meth_set_do_cipher(_hidden_Gost28147_89_cbc,
                                               gost_cipher_do_cbc)
             || !EVP_CIPHER_meth_set_cleanup(_hidden_Gost28147_89_cbc,
@@ -366,7 +364,7 @@ static int gost_cipher_set_param(struct ossl_gost_cipher_ctx *c, int nid)
 static int gost_cipher_init_param(EVP_CIPHER_CTX *ctx,
                                   const unsigned char *key,
                                   const unsigned char *iv, int enc,
-                                  int paramNID, int mode)
+                                  int paramNID)
 {
     struct ossl_gost_cipher_ctx *c = EVP_CIPHER_CTX_get_cipher_data(ctx);
     if (EVP_CIPHER_CTX_get_app_data(ctx) == NULL) {
@@ -422,16 +420,7 @@ static int gost_cipher_init_cp_12(EVP_CIPHER_CTX *ctx,
 int gost_cipher_init(EVP_CIPHER_CTX *ctx, const unsigned char *key,
                      const unsigned char *iv, int enc)
 {
-    return gost_cipher_init_param(ctx, key, iv, enc, NID_undef,
-                                  EVP_CIPH_CFB_MODE);
-}
-
-/* Initializes EVP_CIPHER_CTX with default values */
-int gost_cipher_init_cbc(EVP_CIPHER_CTX *ctx, const unsigned char *key,
-                         const unsigned char *iv, int enc)
-{
-    return gost_cipher_init_param(ctx, key, iv, enc, NID_undef,
-                                  EVP_CIPH_CBC_MODE);
+    return gost_cipher_init_param(ctx, key, iv, enc, NID_undef);
 }
 
 /*

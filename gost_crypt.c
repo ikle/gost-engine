@@ -6,6 +6,7 @@
  *       OpenSSL interface to GOST 28147-89 cipher functions          *
  *          Requires OpenSSL 0.9.9 for compilation                    *
  **********************************************************************/
+#include <stdint.h>
 #include <string.h>
 #include "gost89.h"
 #include <openssl/err.h>
@@ -41,17 +42,31 @@ enum gost89_algo {
     GOST89_CNT,
     GOST89_CBC,
     GOST89_CNT_TC26Z,   /* CNT + TC26 paramset Z by default */
+#ifdef NID_gost89_cfb
+    GOST89_CFB,
+#endif
+#ifdef NID_gost89_ofb
+    GOST89_OFB,
+#endif
+#ifdef NID_gost89_ctr
+    GOST89_CTR,
+#endif
 
     GOST89_ALGO_COUNT
 };
 
 static init_fn gost_cipher_init;
+static init_fn gost_cipher_init_nkm;
 static init_fn gost_cipher_init_cpa;
 static init_fn gost_cipher_init_cp_12;
 
 static cipher_fn gost_cipher_do_cfb;
 static cipher_fn gost_cipher_do_cbc;
 static cipher_fn gost_cipher_do_cnt;
+
+static cipher_fn gost89_cfb_cipher;
+static cipher_fn gost89_ofb_cipher;
+static cipher_fn gost89_ctr_cipher;
 
 static struct gost89_meth gost89_meth[] = {
     {
@@ -78,6 +93,30 @@ static struct gost89_meth gost89_meth[] = {
         gost_cipher_init_cp_12,
         gost_cipher_do_cnt,
     },
+#ifdef NID_gost89_cfb
+    {
+        NID_gost89_cfb, 1,
+        EVP_CIPH_CFB_MODE | EVP_CIPH_NO_PADDING,
+        gost_cipher_init_nkm,
+        gost89_cfb_cipher,
+    },
+#endif
+#ifdef NID_gost89_ofb
+    {
+        NID_gost89_ofb, 1,
+        EVP_CIPH_OFB_MODE | EVP_CIPH_NO_PADDING,
+        gost_cipher_init_nkm,
+        gost89_ofb_cipher,
+    },
+#endif
+#ifdef NID_gost89_ctr
+    {
+        NID_gost89_ctr, 1,
+        EVP_CIPH_CTR_MODE | EVP_CIPH_NO_PADDING,
+        gost_cipher_init_nkm,
+        gost89_ctr_cipher,
+    },
+#endif
 };
 
 /* Cleanup function */
@@ -139,6 +178,27 @@ const EVP_CIPHER *cipher_gost_cpcnt_12(void)
 {
     return gost89_get_meth(GOST89_CNT_TC26Z);
 }
+
+#ifdef NID_gost89_cfb
+const EVP_CIPHER *cipher_gost_cfb(void)
+{
+    return gost89_get_meth(GOST89_CFB);
+}
+#endif
+
+#ifdef NID_gost89_ofb
+const EVP_CIPHER *cipher_gost_ofb(void)
+{
+    return gost89_get_meth(GOST89_OFB);
+}
+#endif
+
+#ifdef NID_gost89_ctr
+const EVP_CIPHER *cipher_gost_ctr(void)
+{
+    return gost89_get_meth(GOST89_CTR);
+}
+#endif
 
 void cipher_gost_destroy(void)
 {
@@ -378,6 +438,63 @@ int gost_cipher_init(EVP_CIPHER_CTX *ctx, const unsigned char *key,
     return gost_cipher_init_param(ctx, key, iv, enc, NID_undef);
 }
 
+static int gost_cipher_init_nkm(EVP_CIPHER_CTX *ctx, const unsigned char *key,
+                                const unsigned char *iv, int enc)
+{
+    struct ossl_gost_cipher_ctx *c = EVP_CIPHER_CTX_get_cipher_data(ctx);
+
+    if (!gost_cipher_init(ctx, key, iv, enc))
+        return 0;
+
+    c->key_meshing = 0;
+    return 1;
+}
+
+/*
+ * out = a ^ b
+ */
+static inline void xor_block(const unsigned char *a, const unsigned char *b,
+                             unsigned char *out, size_t count)
+{
+    size_t i;
+
+    for (i = 0; i < count; ++i)
+        out[i] = a[i] ^ b[i];
+}
+
+/*
+ * Read 64-bit unsigned number from possible unaligned source
+ *
+ * Modern optimizing compilers on LE systems with unaligned access convert
+ * this code into just two instructions: load and byte swap.
+ */
+static inline uint64_t read_be64(const void *from)
+{
+    const unsigned char *in = from;
+    const uint64_t a = in[0], b = in[1], c = in[2], d = in[3],
+                   e = in[4], f = in[5], g = in[6], h = in[7];
+
+    return         h | (g <<  8) | (f << 16) | (e << 24) |
+           (d << 32) | (c << 40) | (b << 48) | (a << 56);
+}
+
+/*
+ * Write 64-bit unsigned number to possible unaligned destination
+ */
+static inline void write_be64(uint64_t x, void *to)
+{
+    unsigned char *out = to;
+
+    out[0] = x >> 56;
+    out[1] = x >> 48;
+    out[2] = x >> 40;
+    out[3] = x >> 32;
+    out[4] = x >> 24;
+    out[5] = x >> 16;
+    out[6] = x >> 8;
+    out[7] = x;
+}
+
 /*
  * Wrapper around gostcrypt function from gost89.c which perform key meshing
  * when nesseccary
@@ -582,6 +699,67 @@ static int gost_cipher_do_cnt(EVP_CIPHER_CTX *ctx, unsigned char *out,
     }
     return 1;
 }
+
+#ifdef NID_gost89_cfb
+static int gost89_cfb_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
+                             const unsigned char *in, size_t inl)
+{
+    struct ossl_gost_cipher_ctx *c = EVP_CIPHER_CTX_get_cipher_data(ctx);
+    unsigned char *iv = EVP_CIPHER_CTX_iv_noconst(ctx);
+    const size_t bs = 8;
+
+    for (; inl >= bs; in += bs, out += bs, inl -= bs) {
+        gost_crypt_mesh(c, iv, iv);
+
+        if (!EVP_CIPHER_CTX_encrypting(ctx))
+            memcpy(iv, in, bs);
+
+        xor_block(in, iv, out, bs);
+
+        if (EVP_CIPHER_CTX_encrypting(ctx))
+            memcpy(iv, out, bs);
+    }
+
+    return 1;
+}
+#endif  /* NID_gost89_cfb */
+
+#ifdef NID_gost89_ofb
+static int gost89_ofb_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
+                             const unsigned char *in, size_t inl)
+{
+    struct ossl_gost_cipher_ctx *c = EVP_CIPHER_CTX_get_cipher_data(ctx);
+    unsigned char *iv = EVP_CIPHER_CTX_iv_noconst(ctx);
+    const size_t bs = 8;
+
+    for (; inl >= bs; in += bs, out += bs, inl -= bs) {
+        gost_crypt_mesh(c, iv, iv);
+        xor_block(in, iv, out, bs);
+    }
+
+    return 1;
+}
+#endif  /* NID_gost89_ofb */
+
+#ifdef NID_gost89_ctr
+static int gost89_ctr_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
+                             const unsigned char *in, size_t inl)
+{
+    struct ossl_gost_cipher_ctx *c = EVP_CIPHER_CTX_get_cipher_data(ctx);
+    unsigned char *iv = EVP_CIPHER_CTX_iv_noconst(ctx);
+    const size_t bs = 8;
+    unsigned char pat[bs];
+
+    for (; inl >= bs; in += bs, out += bs, inl -= bs) {
+        gost_crypt_mesh(c, iv, pat);
+        xor_block(in, pat, out, bs);
+
+        write_be64(read_be64(iv) + 1, iv);
+    }
+
+    return 1;
+}
+#endif  /* NID_gost89_ctr */
 
 /* Cleaning up of EVP_CIPHER_CTX */
 int gost_cipher_cleanup(EVP_CIPHER_CTX *ctx)

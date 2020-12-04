@@ -210,6 +210,11 @@ const EVP_CIPHER *cipher_gost();
 const EVP_CIPHER *cipher_gost_cbc();
 const EVP_CIPHER *cipher_gost_cpacnt();
 const EVP_CIPHER *cipher_gost_cpcnt_12();
+
+const EVP_CIPHER *cipher_gost_cfb();
+const EVP_CIPHER *cipher_gost_ofb();
+const EVP_CIPHER *cipher_gost_ctr();
+
 void cipher_gost_destroy();
 # define EVP_MD_CTRL_KEY_LEN (EVP_MD_CTRL_ALG_CTRL+3)
 # define EVP_MD_CTRL_SET_KEY (EVP_MD_CTRL_ALG_CTRL+4)

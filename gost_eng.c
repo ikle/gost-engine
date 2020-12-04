@@ -42,6 +42,15 @@ static int gost_cipher_nids[] = {
         NID_gost89_cnt,
         NID_gost89_cnt_12,
         NID_gost89_cbc,
+#ifdef NID_gost89_cfb
+        NID_gost89_cfb,
+#endif
+#ifdef NID_gost89_ofb
+        NID_gost89_ofb,
+#endif
+#ifdef NID_gost89_ctr
+        NID_gost89_ctr,
+#endif
         NID_grasshopper_ecb,
         NID_grasshopper_cbc,
         NID_grasshopper_cfb,
@@ -222,6 +231,15 @@ static int bind_gost(ENGINE* e, const char* id) {
         || !EVP_add_cipher(cipher_gost_cbc())
         || !EVP_add_cipher(cipher_gost_cpacnt())
         || !EVP_add_cipher(cipher_gost_cpcnt_12())
+#ifdef NID_gost89_cfb
+        || !EVP_add_cipher(cipher_gost_cfb())
+#endif
+#ifdef NID_gost89_ofb
+        || !EVP_add_cipher(cipher_gost_ofb())
+#endif
+#ifdef NID_gost89_ctr
+        || !EVP_add_cipher(cipher_gost_ctr())
+#endif
         || !EVP_add_cipher(cipher_gost_grasshopper_ecb())
         || !EVP_add_cipher(cipher_gost_grasshopper_cbc())
         || !EVP_add_cipher(cipher_gost_grasshopper_cfb())
@@ -293,6 +311,18 @@ static int gost_ciphers(ENGINE* e, const EVP_CIPHER** cipher,
         *cipher = cipher_gost_cpcnt_12();
     } else if (nid == NID_gost89_cbc) {
         *cipher = cipher_gost_cbc();
+#ifdef NID_gost89_cfb
+    } else if (nid == NID_gost89_cfb) {
+        *cipher = cipher_gost_cfb();
+#endif
+#ifdef NID_gost89_ofb
+    } else if (nid == NID_gost89_ofb) {
+        *cipher = cipher_gost_ofb();
+#endif
+#ifdef NID_gost89_ctr
+    } else if (nid == NID_gost89_ctr) {
+        *cipher = cipher_gost_ctr();
+#endif
     } else if (nid == NID_grasshopper_ecb) {
         *cipher = cipher_gost_grasshopper_ecb();
     } else if (nid == NID_grasshopper_cbc) {

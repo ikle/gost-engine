@@ -438,9 +438,9 @@ int gost_cipher_init_cbc(EVP_CIPHER_CTX *ctx, const unsigned char *key,
  * Wrapper around gostcrypt function from gost89.c which perform key meshing
  * when nesseccary
  */
-static void gost_crypt_mesh(void *ctx, unsigned char *iv, unsigned char *buf)
+static void gost_crypt_mesh(struct ossl_gost_cipher_ctx *c, unsigned char *iv,
+                            unsigned char *buf)
 {
-    struct ossl_gost_cipher_ctx *c = ctx;
     assert(c->count % 8 == 0 && c->count <= 1024);
     if (c->key_meshing && c->count == 1024) {
         cryptopro_key_meshing(&(c->cctx), iv);

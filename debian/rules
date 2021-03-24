@@ -1,0 +1,19 @@
+#!/usr/bin/make -f
+
+DPKG_EXPORT_BUILDFLAGS = 1
+
+include /usr/share/dpkg/default.mk
+
+OPENSSL_ENGINE_DIR = $(shell openssl version -e | sed -r 's/.*"([^"]+)".*/\1/')
+
+%:
+	dh $@
+
+override_dh_auto_configure:
+	dh_auto_configure -- -DCMAKE_BUILD_TYPE=Release
+
+override_dh_auto_test:
+
+override_dh_install:
+	install -d -m 755 $(CURDIR)/debian/libengine-gost-openssl1.1/$(OPENSSL_ENGINE_DIR)
+	install -m 755 bin/gost.so $(CURDIR)/debian/libengine-gost-openssl1.1/$(OPENSSL_ENGINE_DIR)

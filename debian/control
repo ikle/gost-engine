@@ -1,0 +1,15 @@
+Source: gost-engine
+Section: libs
+Priority: extra
+Maintainer: Alexei A. Smekalkine <ikle@ikle.ru>
+Build-Depends: debhelper (>= 7), cmake, libssl-dev (>= 1.1.0), openssl
+Standards-Version: 3.9.4
+Homepage: https://github.com/ikle/gost-engine
+
+Package: libengine-gost-openssl1.1
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Loadable module for OpenSSL implementing GOST algorithms
+ This package contains loadable module for OpenSSL library, which
+ implements (in software) Russian national standard (GOST) cryptograpy
+ algorithms.

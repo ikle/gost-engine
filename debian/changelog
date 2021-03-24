@@ -1,0 +1,5 @@
+gost-engine (1:1.1.0+p5) unstable; urgency=low
+
+  * Add Debian packaging
+
+ -- Alexei A. Smekalkine <ikle@ikle.ru>  Wed, 24 Mar 2021 12:12:54 +0300

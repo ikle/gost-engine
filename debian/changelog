@@ -1,3 +1,9 @@
+gost-engine (1:1.1.0+p7) unstable; urgency=low
+
+  * gost_params: add R-1323565.1.024-2019 paramsets
+
+ -- Alexei A. Smekalkine <ikle@ikle.ru>  Thu, 20 Jul 2023 20:50:08 +0300
+
 gost-engine (1:1.1.0+p6) unstable; urgency=low
 
   * Add add support for plain CFB and OFB modes

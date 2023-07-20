@@ -204,6 +204,33 @@ static int pkey_gost_ec_ctrl_str_256(EVP_PKEY_CTX *ctx,
             default:
                 return 0;
             }
+        } else if ((strlen(value) == 3)
+                   && (toupper((unsigned char)value[0]) == 'T')
+		   && (toupper((unsigned char)value[1]) == 'C')) {
+            switch (toupper((unsigned char)value[2])) {
+#ifdef NID_id_tc26_gost_3410_2012_256_paramSetA
+            case 'A':
+                param_nid = NID_id_tc26_gost_3410_2012_256_paramSetA;
+                break;
+#endif
+#ifdef NID_id_tc26_gost_3410_2012_256_paramSetB
+            case 'B':
+                param_nid = NID_id_tc26_gost_3410_2012_256_paramSetB;
+                break;
+#endif
+#ifdef NID_id_tc26_gost_3410_2012_256_paramSetC
+            case 'C':
+                param_nid = NID_id_tc26_gost_3410_2012_256_paramSetC;
+                break;
+#endif
+#ifdef NID_id_tc26_gost_3410_2012_256_paramSetD
+            case 'D':
+                param_nid = NID_id_tc26_gost_3410_2012_256_paramSetD;
+                break;
+#endif
+            default:
+                return 0;
+            }
         } else {
             R3410_ec_params *p = R3410_2001_paramset;
             param_nid = OBJ_txt2nid(value);
@@ -248,6 +275,24 @@ static int pkey_gost_ec_ctrl_str_512(EVP_PKEY_CTX *ctx,
             param_nid = NID_id_tc26_gost_3410_2012_512_paramSetB;
             break;
 
+        default:
+            return 0;
+        }
+    } else if ((strlen(value) == 3)
+                   && (toupper((unsigned char)value[0]) == 'T')
+		   && (toupper((unsigned char)value[1]) == 'C')) {
+        switch (toupper((unsigned char)value[2])) {
+        case 'A':
+            param_nid = NID_id_tc26_gost_3410_2012_512_paramSetA;
+            break;
+        case 'B':
+            param_nid = NID_id_tc26_gost_3410_2012_512_paramSetB;
+            break;
+#ifdef NID_id_tc26_gost_3410_2012_512_paramSetC
+        case 'C':
+            param_nid = NID_id_tc26_gost_3410_2012_512_paramSetC;
+            break;
+#endif
         default:
             return 0;
         }
@@ -316,6 +361,9 @@ static int pkey_gost2012_paramgen(EVP_PKEY_CTX *ctx, EVP_PKEY *pkey)
     switch (data->sign_param_nid) {
     case NID_id_tc26_gost_3410_2012_512_paramSetA:
     case NID_id_tc26_gost_3410_2012_512_paramSetB:
+#ifdef NID_id_tc26_gost_3410_2012_512_paramSetC
+    case NID_id_tc26_gost_3410_2012_512_paramSetC:
+#endif
         result =
             (EVP_PKEY_assign(pkey, NID_id_GostR3410_2012_512, ec)) ? 1 : 0;
         break;
@@ -326,6 +374,18 @@ static int pkey_gost2012_paramgen(EVP_PKEY_CTX *ctx, EVP_PKEY *pkey)
     case NID_id_GostR3410_2001_CryptoPro_XchA_ParamSet:
     case NID_id_GostR3410_2001_CryptoPro_XchB_ParamSet:
     case NID_id_GostR3410_2001_TestParamSet:
+#ifdef NID_id_tc26_gost_3410_2012_256_paramSetA
+    case NID_id_tc26_gost_3410_2012_256_paramSetA:
+#endif
+#ifdef NID_id_tc26_gost_3410_2012_256_paramSetB
+    case NID_id_tc26_gost_3410_2012_256_paramSetB:
+#endif
+#ifdef NID_id_tc26_gost_3410_2012_256_paramSetC
+    case NID_id_tc26_gost_3410_2012_256_paramSetC:
+#endif
+#ifdef NID_id_tc26_gost_3410_2012_256_paramSetD
+    case NID_id_tc26_gost_3410_2012_256_paramSetD:
+#endif
         result =
             (EVP_PKEY_assign(pkey, NID_id_GostR3410_2012_256, ec)) ? 1 : 0;
         break;

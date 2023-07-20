@@ -1,3 +1,9 @@
+gost-engine (1:1.1.0+p8) unstable; urgency=low
+
+  * gost_pmeth: allow to use TC26 paramsets
+
+ -- Alexei A. Smekalkine <ikle@ikle.ru>  Thu, 20 Jul 2023 21:55:10 +0300
+
 gost-engine (1:1.1.0+p7) unstable; urgency=low
 
   * gost_params: add R-1323565.1.024-2019 paramsets

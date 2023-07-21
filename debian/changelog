@@ -1,3 +1,11 @@
+gost-engine (1:1.1.0+p9) unstable; urgency=low
+
+  * gost_params: clean up and unify code
+  * gost_params: fix TC26 256-bit ParamSet B definition
+  * gost_pmeth: simplify and unify paramset code a bit
+
+ -- Alexei A. Smekalkine <ikle@ikle.ru>  Fri, 21 Jul 2023 07:32:58 +0300
+
 gost-engine (1:1.1.0+p8) unstable; urgency=low
 
   * gost_pmeth: allow to use TC26 paramsets

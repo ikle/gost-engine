@@ -204,9 +204,9 @@ static int pkey_gost_ec_ctrl_str_256(EVP_PKEY_CTX *ctx,
             default:
                 return 0;
             }
-        } else if ((strlen(value) == 3)
-                   && (toupper((unsigned char)value[0]) == 'T')
-		   && (toupper((unsigned char)value[1]) == 'C')) {
+        } else if (strlen(value) == 3
+                   && toupper((unsigned char)value[0]) == 'T'
+                   && toupper((unsigned char)value[1]) == 'C') {
             switch (toupper((unsigned char)value[2])) {
 #ifdef NID_id_tc26_gost_3410_2012_256_paramSetA
             case 'A':
@@ -265,26 +265,17 @@ static int pkey_gost_ec_ctrl_str_512(EVP_PKEY_CTX *ctx,
     if (!value)
         return 0;
 
+    if (strlen(value) == 3
+        && toupper((unsigned char)value[0]) == 'T'
+        && toupper((unsigned char)value[1]) == 'C')
+        value += 2;
+
     if (strlen(value) == 1) {
         switch (toupper((unsigned char)value[0])) {
         case 'A':
             param_nid = NID_id_tc26_gost_3410_2012_512_paramSetA;
             break;
 
-        case 'B':
-            param_nid = NID_id_tc26_gost_3410_2012_512_paramSetB;
-            break;
-
-        default:
-            return 0;
-        }
-    } else if ((strlen(value) == 3)
-                   && (toupper((unsigned char)value[0]) == 'T')
-		   && (toupper((unsigned char)value[1]) == 'C')) {
-        switch (toupper((unsigned char)value[2])) {
-        case 'A':
-            param_nid = NID_id_tc26_gost_3410_2012_512_paramSetA;
-            break;
         case 'B':
             param_nid = NID_id_tc26_gost_3410_2012_512_paramSetB;
             break;

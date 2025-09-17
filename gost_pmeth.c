@@ -53,7 +53,11 @@ static int pkey_gost_init(EVP_PKEY_CTX *ctx)
 }
 
 /* Copies contents of gost_pmeth_data structure */
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+static int pkey_gost_copy(EVP_PKEY_CTX *dst, const EVP_PKEY_CTX *src)
+#else
 static int pkey_gost_copy(EVP_PKEY_CTX *dst, EVP_PKEY_CTX *src)
+#endif
 {
     struct gost_pmeth_data *dst_data, *src_data;
     if (!pkey_gost_init(dst)) {
@@ -550,7 +554,11 @@ static void pkey_gost_mac_cleanup(EVP_PKEY_CTX *ctx)
         OPENSSL_free(data);
 }
 
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+static int pkey_gost_mac_copy(EVP_PKEY_CTX *dst, const EVP_PKEY_CTX *src)
+#else
 static int pkey_gost_mac_copy(EVP_PKEY_CTX *dst, EVP_PKEY_CTX *src)
+#endif
 {
     struct gost_mac_pmeth_data *dst_data, *src_data;
     if (!pkey_gost_mac_init(dst)) {

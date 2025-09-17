@@ -635,7 +635,11 @@ static int param_cmp_gost_ec(const EVP_PKEY *a, const EVP_PKEY *b)
 }
 
 /* ---------- Public key functions * --------------------------------------*/
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+static int pub_decode_gost_ec(EVP_PKEY *pk, const X509_PUBKEY *pub)
+#else
 static int pub_decode_gost_ec(EVP_PKEY *pk, X509_PUBKEY *pub)
+#endif
 {
     X509_ALGOR *palg = NULL;
     const unsigned char *pubkey_buf = NULL;

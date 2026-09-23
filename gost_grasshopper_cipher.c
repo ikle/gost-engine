@@ -381,7 +381,7 @@ int gost_grasshopper_cipher_do_ofb(EVP_CIPHER_CTX* ctx, unsigned char* out,
         }
     }
 
-    for (; i + BS < inl; i += BS, in_ptr += BS, out_ptr += BS) {
+    for (; (inl - i) >= BS; i += BS, in_ptr += BS, out_ptr += BS) {
         /*
          * block cipher current iv
          */
@@ -446,7 +446,7 @@ int gost_grasshopper_cipher_do_cfb(EVP_CIPHER_CTX* ctx, unsigned char* out,
         }
     }
 
-    for (; i + BS < inl; i += BS, in_ptr += BS, out_ptr += BS) {
+    for (; (inl - i) >= BS; i += BS, in_ptr += BS, out_ptr += BS) {
         /*
          * block cipher current iv
          */

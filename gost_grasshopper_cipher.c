@@ -357,6 +357,7 @@ static void gost_grasshopper_cnt_next(gost_grasshopper_cipher_ctx_ofb* ctx, gras
 
 int gost_grasshopper_cipher_do_ofb(EVP_CIPHER_CTX* ctx, unsigned char* out,
                                           const unsigned char* in, size_t inl) {
+    const size_t BS = GRASSHOPPER_BLOCK_SIZE;
     gost_grasshopper_cipher_ctx_ofb* c = (gost_grasshopper_cipher_ctx_ofb*) EVP_CIPHER_CTX_get_cipher_data(ctx);
     const unsigned char* in_ptr = in;
     unsigned char* out_ptr = out;
@@ -368,11 +369,11 @@ int gost_grasshopper_cipher_do_ofb(EVP_CIPHER_CTX* ctx, unsigned char* out,
 
     /* process partial block if any */
     if (num > 0) {
-        for (j = (size_t) num, i = 0; j < GRASSHOPPER_BLOCK_SIZE && i < inl;
+        for (j = (size_t) num, i = 0; j < BS && i < inl;
              j++, i++, in_ptr++, out_ptr++) {
             *out_ptr = buf[j] ^ (*in_ptr);
         }
-        if (j == GRASSHOPPER_BLOCK_SIZE) {
+        if (j == BS) {
             EVP_CIPHER_CTX_set_num(ctx, 0);
         } else {
             EVP_CIPHER_CTX_set_num(ctx, (int) j);
@@ -380,8 +381,7 @@ int gost_grasshopper_cipher_do_ofb(EVP_CIPHER_CTX* ctx, unsigned char* out,
         }
     }
 
-    for (; i + GRASSHOPPER_BLOCK_SIZE <
-           inl; i += GRASSHOPPER_BLOCK_SIZE, in_ptr += GRASSHOPPER_BLOCK_SIZE, out_ptr += GRASSHOPPER_BLOCK_SIZE) {
+    for (; i + BS < inl; i += BS, in_ptr += BS, out_ptr += BS) {
         /*
          * block cipher current iv
          */
@@ -394,7 +394,7 @@ int gost_grasshopper_cipher_do_ofb(EVP_CIPHER_CTX* ctx, unsigned char* out,
         /*
          * output this block
          */
-        for (j = 0; j < GRASSHOPPER_BLOCK_SIZE; j++) {
+        for (j = 0; j < BS; j++) {
             out_ptr[j] = buf[j] ^ in_ptr[j];
         }
     }
@@ -415,6 +415,7 @@ int gost_grasshopper_cipher_do_ofb(EVP_CIPHER_CTX* ctx, unsigned char* out,
 
 int gost_grasshopper_cipher_do_cfb(EVP_CIPHER_CTX* ctx, unsigned char* out,
                                           const unsigned char* in, size_t inl) {
+    const size_t BS = GRASSHOPPER_BLOCK_SIZE;
     gost_grasshopper_cipher_ctx* c = (gost_grasshopper_cipher_ctx*) EVP_CIPHER_CTX_get_cipher_data(ctx);
     const unsigned char* in_ptr = in;
     unsigned char* out_ptr = out;
@@ -427,17 +428,17 @@ int gost_grasshopper_cipher_do_cfb(EVP_CIPHER_CTX* ctx, unsigned char* out,
 
     /* process partial block if any */
     if (num > 0) {
-        for (j = (size_t) num, i = 0; j < GRASSHOPPER_BLOCK_SIZE && i < inl; j++, i++, in_ptr++, out_ptr++) {
+        for (j = (size_t) num, i = 0; j < BS && i < inl; j++, i++, in_ptr++, out_ptr++) {
             if (!encrypting) {
-                buf[j + GRASSHOPPER_BLOCK_SIZE] = *in_ptr;
+                buf[j + BS] = *in_ptr;
             }
             *out_ptr = buf[j] ^ (*in_ptr);
             if (encrypting) {
-                buf[j + GRASSHOPPER_BLOCK_SIZE] = *out_ptr;
+                buf[j + BS] = *out_ptr;
             }
         }
-        if (j == GRASSHOPPER_BLOCK_SIZE) {
-            memcpy(iv, buf + GRASSHOPPER_BLOCK_SIZE, GRASSHOPPER_BLOCK_SIZE);
+        if (j == BS) {
+            memcpy(iv, buf + BS, BS);
             EVP_CIPHER_CTX_set_num(ctx, 0);
         } else {
             EVP_CIPHER_CTX_set_num(ctx, (int) j);
@@ -445,8 +446,7 @@ int gost_grasshopper_cipher_do_cfb(EVP_CIPHER_CTX* ctx, unsigned char* out,
         }
     }
 
-    for (; i + GRASSHOPPER_BLOCK_SIZE <
-           inl; i += GRASSHOPPER_BLOCK_SIZE, in_ptr += GRASSHOPPER_BLOCK_SIZE, out_ptr += GRASSHOPPER_BLOCK_SIZE) {
+    for (; i + BS < inl; i += BS, in_ptr += BS, out_ptr += BS) {
         /*
          * block cipher current iv
          */
@@ -459,15 +459,15 @@ int gost_grasshopper_cipher_do_cfb(EVP_CIPHER_CTX* ctx, unsigned char* out,
          * output this block
          */
         if (!encrypting) {
-            memcpy(iv, in_ptr, GRASSHOPPER_BLOCK_SIZE);
+            memcpy(iv, in_ptr, BS);
         }
-        for (j = 0; j < GRASSHOPPER_BLOCK_SIZE; j++) {
+        for (j = 0; j < BS; j++) {
             out_ptr[j] = buf[j] ^ in_ptr[j];
         }
         /* Encrypt */
         /* Next iv is next block of cipher text */
         if (encrypting) {
-            memcpy(iv, out_ptr, GRASSHOPPER_BLOCK_SIZE);
+            memcpy(iv, out_ptr, BS);
         }
     }
 
@@ -476,14 +476,14 @@ int gost_grasshopper_cipher_do_cfb(EVP_CIPHER_CTX* ctx, unsigned char* out,
         grasshopper_encrypt_block(&c->encrypt_round_keys, (grasshopper_w128_t*) iv, (grasshopper_w128_t*) buf,
                                   &c->buffer);
         if (!encrypting) {
-            memcpy(buf + GRASSHOPPER_BLOCK_SIZE, in_ptr, inl - i);
+            memcpy(buf + BS, in_ptr, inl - i);
         }
         for (j = 0; i < inl; j++, i++) {
             out_ptr[j] = buf[j] ^ in_ptr[j];
         }
         EVP_CIPHER_CTX_set_num(ctx, (int) j);
         if (encrypting) {
-            memcpy(buf + GRASSHOPPER_BLOCK_SIZE, out_ptr, j);
+            memcpy(buf + BS, out_ptr, j);
         }
     } else {
         EVP_CIPHER_CTX_set_num(ctx, 0);

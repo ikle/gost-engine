@@ -1,3 +1,11 @@
+gost-engine (1:1.1.0+p10) unstable; urgency=low
+
+  * allow to build for ossl 3.x
+  * support build for Debian 12
+  * Kuznechik: process full available block in CFB and OFB mode
+
+ -- Alexei A. Smekalkine <ikle@ikle.ru>  Thu, 24 Sep 2026 19:25:47 +0300
+
 gost-engine (1:1.1.0+p9) unstable; urgency=low
 
   * gost_params: clean up and unify code
